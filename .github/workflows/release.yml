@@ -562,3 +562,22 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: startsWith(github.ref, 'refs/tags/')
+
+  # Opens a PR against microsoft/winget-pkgs for the Windows binary. Requires the
+  # package to already exist in winget-pkgs, a winget-pkgs fork under the repository
+  # owner, and a classic PAT (public_repo scope) stored as the WINGET_TOKEN secret.
+  winget:
+    if: ${{ github.repository == 'agentgateway/agentgateway' && github.event_name == 'push' && !contains(github.ref_name, '-alpha') && !contains(github.ref_name, '-beta') && !contains(github.ref_name, '-rc') }}
+    needs:
+    - release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+    - name: Publish to WinGet
+      uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # main (2026-10-07)
+      with:
+        identifier: agentgateway.agentgateway
+        # Only the agentgateway binary; the release also carries agctl-windows-amd64.exe.
+        installers-regex: '^agentgateway-windows-amd64\.exe$'
+        token: ${{ secrets.WINGET_TOKEN }}
